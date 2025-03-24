@@ -10,43 +10,34 @@ on:
 
 jobs:
   trivy-scan:
-###          trivy fs --exit-code 1 --severity HIGH,CRITICAL --format json -o trivy-results.json .
-    name: Scan Container for Security Issues
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      
-      - name: Build an image from Dockerfile
-        run: |
-          docker build --file Dockerfile.app -t dvpwa.app:${{ github.sha }} .
-      
+        uses: actions/checkout@v3
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'dvpwa.app:${{ github.sha }}'
-          format: 'json'
+          format: 'table'  # Use table format for human-readable results
           exit-code: '0'  # Ensures Trivy never exits with an error code
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.json'
+          output: 'trivy-results.txt'  # Output the results to a text file
         continue-on-error: true
 
-
-      - name: Debug Trivy output
-        run: ls -l trivy-results.json
-
-      - name: Format Trivy results (one-liner)
+      - name: Check if Trivy results were generated
         run: |
-          python3 -c "import json; f=open('trivy-results.json'); data=json.load(f); f.close(); results=''; [results := results + f'**{vuln[\"PkgName\"]}** ({vuln[\"Severity\"]}): {vuln[\"Description\"]}\\n' for vuln in data.get('Vulnerabilities', [])]; print(results)" > formatted_results.txt
-
-      - name: Check if results are empty
-        id: check_results
-        run: |
-          if [ ! -s formatted_results.txt ]; then
-            echo "No high or critical vulnerabilities found." > formatted_results.txt
+          if [ ! -f trivy-results.txt ]; then
+            echo "No Trivy results found." > formatted_results.txt
           fi
+
+      - name: Read Trivy results
+        id: formatted_results
+        run: |
+          echo "::set-output name=results::$(cat trivy-results.txt)"
 
       - name: Comment formatted scan results on PR
         uses: peter-evans/create-or-update-comment@v2
