@@ -1,0 +1,60 @@
+name: Trivy Security Scan
+
+on:
+  pull_request:
+    paths:
+      - '**/*.dockerfile'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.json'
+
+jobs:
+  trivy-scan:
+###          trivy fs --exit-code 1 --severity HIGH,CRITICAL --format json -o trivy-results.json .
+    name: Scan Container for Security Issues
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Build an image from Dockerfile
+        run: |
+          docker build --file Dockerfile.app -t dvpwa.app:${{ github.sha }} .
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'dvpwa.app:${{ github.sha }}'
+          format: 'json'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+
+      - name: Debug Trivy output
+        run: cat trivy-results.json
+
+      - name: Format Trivy results (one-liner)
+        run: |
+          python3 -c "import json; f=open('trivy-results.json'); data=json.load(f); f.close(); results=''; [results := results + f'**{vuln[\"PkgName\"]}** ({vuln[\"Severity\"]}): {vuln[\"Description\"]}\\n' for vuln in data.get('Vulnerabilities', [])]; print(results)" > formatted_results.txt
+
+      - name: Check if results are empty
+        id: check_results
+        run: |
+          if [ ! -s formatted_results.txt ]; then
+            echo "No high or critical vulnerabilities found." > formatted_results.txt
+          fi
+
+      - name: Comment formatted scan results on PR
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Trivy Security Scan Results
+
+            Please find the scan results below:
+
+            ```
+            $(cat formatted_results.txt)
+            ```
