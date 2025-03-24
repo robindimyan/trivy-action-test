@@ -35,7 +35,7 @@ jobs:
           format: 'table'  # Human-readable format for results
           exit-code: '0'  # Ensures the job keeps running regardless of vulnerabilities found
           ignore-unfixed: true
-          vuln-type: 'os,library'
+          vuln-type: 'os,library,secret'
           severity: 'CRITICAL,HIGH'
           output: 'trivy-results.txt'
 
