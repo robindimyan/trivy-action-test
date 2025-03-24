@@ -41,7 +41,7 @@ jobs:
 
       - name: Run Trivy secret scanning
         run: |
-          trivy secret --format table --output trivy-secrets-results.txt .
+          trivy secret --format table . > trivy-secrets-results.txt
 
       - name: Check if Trivy results were generated
         run: |
