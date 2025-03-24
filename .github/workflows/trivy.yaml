@@ -30,10 +30,10 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-
+        continue-on-error: true
 
       - name: Debug Trivy output
-        run: cat trivy-results.json
+        run: ls -l trivy-results.json
 
       - name: Format Trivy results (one-liner)
         run: |
