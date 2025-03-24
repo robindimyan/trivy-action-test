@@ -26,11 +26,13 @@ jobs:
         with:
           image-ref: 'dvpwa.app:${{ github.sha }}'
           format: 'json'
-          exit-code: '0'  # This ensures that Trivy never exits with an error code
+          exit-code: '0'  # Ensures Trivy never exits with an error code
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.json'
         continue-on-error: true
+
 
       - name: Debug Trivy output
         run: ls -l trivy-results.json
