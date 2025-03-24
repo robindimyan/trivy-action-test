@@ -37,7 +37,7 @@ jobs:
       - name: Read Trivy results
         id: formatted_results
         run: |
-          echo "::set-output name=results::$(cat trivy-results.txt)"
+          echo "::set-output name=results::$(cat formatted_results.txt)"
 
       - name: Comment formatted scan results on PR
         uses: peter-evans/create-or-update-comment@v2
