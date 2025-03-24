@@ -58,5 +58,5 @@ jobs:
             Please find the scan results below:
 
             ```
-            $(cat formatted_results.txt)
+            ${{ steps.formatted_results.outputs.results }}
             ```
