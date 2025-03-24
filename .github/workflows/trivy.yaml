@@ -45,34 +45,58 @@ jobs:
 
       - name: Check if Trivy results were generated
         run: |
+          # Prepare results for vulnerability scan
           if [ ! -s trivy-vuln-results.txt ]; then
-            echo "No Trivy vulnerability results found." > formatted_results.txt
+            echo "No Trivy vulnerability results found." > formatted_vuln_results.txt
           else
-            cat trivy-vuln-results.txt > formatted_results.txt
+            cat trivy-vuln-results.txt > formatted_vuln_results.txt
           fi
+
+          # Prepare results for secret scan
           if [ ! -s trivy-secrets-results.txt ]; then
-            echo "No secrets found." >> formatted_results.txt
+            echo "No secrets found." > formatted_secrets_results.txt
           else
-            cat trivy-secrets-results.txt >> formatted_results.txt
+            cat trivy-secrets-results.txt > formatted_secrets_results.txt
           fi
+
+          # Concatenate the formatted results
+          cat formatted_vuln_results.txt formatted_secrets_results.txt > formatted_results.txt
           cat formatted_results.txt  # Log the content for debugging
 
       - name: Set Trivy results as output
         id: set_results
         run: |
-          echo "results<<EOF" >> $GITHUB_ENV
-          cat formatted_results.txt >> $GITHUB_ENV
+          # Store separate results as environment variables
+          echo "vuln_results<<EOF" >> $GITHUB_ENV
+          cat formatted_vuln_results.txt >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Comment formatted scan results on PR
+          echo "secrets_results<<EOF" >> $GITHUB_ENV
+          cat formatted_secrets_results.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Comment vulnerability scan results on PR
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ### Trivy Security Scan Results
+            ### Trivy Vulnerability Scan Results
 
-            Please find the scan results below:
+            Please find the vulnerability scan results below:
 
             ```
-            ${{ env.results }}
+            ${{ env.vuln_results }}
+            ```
+
+      - name: Comment secret scan results on PR
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Trivy Secret Scan Results
+
+            Please find the secret scan results below:
+
+            ```
+            ${{ env.secrets_results }}
             ```
