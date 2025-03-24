@@ -41,21 +41,18 @@ jobs:
 
       - name: Check if Trivy results were generated
         run: |
-          if [ ! -f trivy-results.txt ]; then
+          if [ ! -s trivy-results.txt ]; then
             echo "No Trivy results found." > formatted_results.txt
           else
             cat trivy-results.txt > formatted_results.txt
           fi
-          cat formatted_results.txt
+          cat formatted_results.txt  # Log the content for debugging
 
-      - name: Print formatted results
-        run: |
-          cat formatted_results.txt
-
-      - name: Read Trivy results
+      - name: Read Trivy results into an environment variable
         id: formatted_results
         run: |
-          echo "::set-output name=results::$(cat formatted_results.txt)"
+          echo "TRIVY_RESULTS=$(cat formatted_results.txt)" >> $GITHUB_ENV
+          echo "Results: $TRIVY_RESULTS"  # Debugging output
 
       - name: Comment formatted scan results on PR
         uses: peter-evans/create-or-update-comment@v2
@@ -67,5 +64,6 @@ jobs:
             Please find the scan results below:
 
             ```          
-            ${{ steps.formatted_results.outputs.results }}
+            ${{ env.TRIVY_RESULTS }}
             ```
+            
