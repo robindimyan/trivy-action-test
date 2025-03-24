@@ -35,16 +35,25 @@ jobs:
           format: 'table'  # Human-readable format for results
           exit-code: '0'  # Ensures the job keeps running regardless of vulnerabilities found
           ignore-unfixed: true
-          vuln-type: 'os,library,secret'
+          vuln-type: 'os,library'  # OS and library vulnerability scanning
           severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.txt'
+          output: 'trivy-vuln-results.txt'
+
+      - name: Run Trivy secret scanning
+        run: |
+          trivy secret --format table --output trivy-secrets-results.txt .
 
       - name: Check if Trivy results were generated
         run: |
-          if [ ! -s trivy-results.txt ]; then
-            echo "No Trivy results found." > formatted_results.txt
+          if [ ! -s trivy-vuln-results.txt ]; then
+            echo "No Trivy vulnerability results found." > formatted_results.txt
           else
-            cat trivy-results.txt > formatted_results.txt
+            cat trivy-vuln-results.txt > formatted_results.txt
+          fi
+          if [ ! -s trivy-secrets-results.txt ]; then
+            echo "No secrets found." >> formatted_results.txt
+          else
+            cat trivy-secrets-results.txt >> formatted_results.txt
           fi
           cat formatted_results.txt  # Log the content for debugging
 
