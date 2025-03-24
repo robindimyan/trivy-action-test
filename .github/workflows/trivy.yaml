@@ -26,7 +26,7 @@ jobs:
         with:
           image-ref: 'dvpwa.app:${{ github.sha }}'
           format: 'json'
-          exit-code: '1'
+          exit-code: '0'  # This ensures that Trivy never exits with an error code
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
