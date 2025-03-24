@@ -16,6 +16,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Ensure Docker is installed
+        run: |
+          if ! command -v docker &> /dev/null
+          then
+            echo "Docker could not be found. Please install Docker."
+            exit 1
+          fi
+
       - name: Build an image from Dockerfile
         run: |
           docker build --file Dockerfile.app -t dvpwa.app:${{ github.sha }} .
@@ -24,24 +32,30 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'dvpwa.app:${{ github.sha }}'
-          format: 'table'  # Use table format for human-readable results
-          exit-code: '0'  # Ensures Trivy never exits with an error code
+          format: 'table'  # Human-readable format for results
+          exit-code: '0'  # Ensures the job keeps running regardless of vulnerabilities found
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.txt'  # Output the results to a text file
-        continue-on-error: true
+          output: 'trivy-results.txt'
 
       - name: Check if Trivy results were generated
         run: |
           if [ ! -f trivy-results.txt ]; then
             echo "No Trivy results found." > formatted_results.txt
+          else
+            cat trivy-results.txt > formatted_results.txt
           fi
+          cat formatted_results.txt
 
-      - name: Read Trivy results
+      - name: Print formatted results
+        run: |
+          cat formatted_results.txt
+
+      - name: Set output for results
         id: formatted_results
         run: |
-          echo "::set-output name=results::$(cat formatted_results.txt)"
+          echo "results=$(cat formatted_results.txt)" >> $GITHUB_ENV
 
       - name: Comment formatted scan results on PR
         uses: peter-evans/create-or-update-comment@v2
@@ -53,5 +67,5 @@ jobs:
             Please find the scan results below:
 
             ```
-            ${{ steps.formatted_results.outputs.results }}
+            ${{ env.results }}
             ```
