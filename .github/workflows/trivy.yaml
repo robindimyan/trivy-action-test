@@ -48,11 +48,12 @@ jobs:
           fi
           cat formatted_results.txt  # Log the content for debugging
 
-      - name: Read Trivy results into an environment variable
-        id: formatted_results
+      - name: Set Trivy results as output
+        id: set_results
         run: |
-          echo "TRIVY_RESULTS=$(cat formatted_results.txt)" >> $GITHUB_ENV
-          echo "Results: $TRIVY_RESULTS"  # Debugging output
+          echo "results<<EOF" >> $GITHUB_ENV
+          cat formatted_results.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Comment formatted scan results on PR
         uses: peter-evans/create-or-update-comment@v2
@@ -63,7 +64,6 @@ jobs:
 
             Please find the scan results below:
 
-            ```          
-            ${{ env.TRIVY_RESULTS }}
             ```
-            
+            ${{ env.results }}
+            ```
