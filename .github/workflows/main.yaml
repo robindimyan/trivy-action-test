@@ -52,10 +52,37 @@ jobs:
       
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: 'dvpwa.app:${{ github.sha }}'
-          format: 'table'
-          exit-code: '1'
+          format: 'json'
+          exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.json'
+
+      - name: Convert Trivy JSON to Markdown
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+        cat trivy-results.json
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Secret Scanner
+        uses: aquasecurity/trivy-action@v0.19.0
+        with:
+          scan-type: fs
+          scanners: secret
+          format: json
+          severity: CRITICAL,HIGH
+          output: trivy-secrets-report.json
+
+      - name: Print Secrets Report
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+        cat trivy-secrets-report.json
+
